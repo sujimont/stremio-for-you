@@ -158,16 +158,48 @@
       </label>
 
       <fieldset>
+        <legend>Content Types</legend>
+        <label class="row"><input type="checkbox" data-row="movie" checked>
+          <span>Movies<small>Include movie recommendation rows</small></span></label>
+        <label class="row"><input type="checkbox" data-row="series" id="seriesBox" checked>
+          <span>TV Series<small>Include TV series recommendation rows (uncheck if only interested in movies)</small></span></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Indian Cinema Languages</legend>
+        <p class="hint">Filter Indian movies to only your preferred languages:</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+          <label class="row" style="margin:0;"><input type="checkbox" data-indian-lang="ml" checked> <span>Malayalam</span></label>
+          <label class="row" style="margin:0;"><input type="checkbox" data-indian-lang="ta" checked> <span>Tamil</span></label>
+          <label class="row" style="margin:0;"><input type="checkbox" data-indian-lang="hi" checked> <span>Hindi</span></label>
+          <label class="row" style="margin:0;"><input type="checkbox" data-indian-lang="te"> <span>Telugu</span></label>
+          <label class="row" style="margin:0;"><input type="checkbox" data-indian-lang="kn"> <span>Kannada</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
         <legend>Rows</legend>
-        <p class="hint">"Recommended for You" is always on.</p>
+        <p class="hint">"Recommended for You" is always on for selected types.</p>
+        <label class="row"><input type="checkbox" data-row="ai" checked>
+          <span>AI Storyline Matches (Gemini Flash)<small>Deep narrative &amp; psychological recommendations for your recently watched movies</small></span></label>
+        <div style="margin: 6px 0 12px 26px;">
+          <label style="font-size: 13px; color: var(--muted); margin-bottom: 2px;">Number of recent movie storyline rows:</label>
+          <select id="aiCount" style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; font-size: 13px;">
+            <option value="2">2 recent movies</option>
+            <option value="3">3 recent movies</option>
+            <option value="4" selected>4 recent movies (Recommended)</option>
+            <option value="5">5 recent movies</option>
+            <option value="6">6 recent movies</option>
+          </select>
+        </div>
         <label class="row"><input type="checkbox" data-row="next" checked>
           <span>Finish the Story &amp; New Seasons<small>Next film in a series you started, new seasons of shows you finished</small></span></label>
         <label class="row"><input type="checkbox" data-row="byw" checked>
-          <span>Because you watched…<small>Rows for your most recently watched movie and series</small></span></label>
+          <span>Because you watched… (Tag-based)<small>Rows for your most recently watched titles</small></span></label>
         <label class="row"><input type="checkbox" data-row="short" checked>
-          <span>Under 100 Minutes<small>Your movie picks that fit in an evening</small></span></label>
-        <label class="row"><input type="checkbox" data-row="weekend" checked>
-          <span>Finish in a Weekend<small>Your series picks with one short, finished season</small></span></label>
+          <span>Under 100 Minutes (Movies)<small>Your movie picks that fit in an evening</small></span></label>
+        <label class="row" id="weekendRow"><input type="checkbox" data-row="weekend" checked>
+          <span>Finish in a Weekend (Series)<small>Your series picks with one short, finished season</small></span></label>
       </fieldset>
 
       <button class="primary" type="submit">Connect</button>
@@ -277,10 +309,14 @@
         throw new Error('That auth key did not work. It may have expired: sign in again.');
       }
 
+      const indianLangs = [...document.querySelectorAll('[data-indian-lang]:checked')].map((box) => box.dataset.indianLang);
+      const aiCount = Number($('aiCount')?.value) || 4;
       const config = {
         authKey,
         top: $('top').checked,
         off: [...document.querySelectorAll('[data-row]')].filter((box) => !box.checked).map((box) => box.dataset.row),
+        indianLangs: indianLangs.length ? indianLangs : ['ml', 'ta', 'hi'],
+        aiCount,
       };
 
       $('password').value = '';

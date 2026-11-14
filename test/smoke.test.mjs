@@ -235,10 +235,15 @@ const weekend = (await getJson(`${main}/catalog/series/weekend.json`)).metas;
 check('Finish in a Weekend: one finished short season', weekend.map((m) => m.id).join() === 'tt401', weekend.map((m) => m.id).join(', '));
 check('row types are enforced', (await request('GET', `${main}/catalog/series/short.json`)).status === 404);
 
-const minimal = base({ authKey: 'AUTHKEY_MAIN', top: true, off: ['next', 'short', 'weekend', 'byw'] });
+const minimal = base({ authKey: 'AUTHKEY_MAIN', top: true, off: ['next', 'short', 'weekend', 'byw', 'ai'] });
 const minimalNames = (await getJson(`${minimal}/manifest.json`)).catalogs.map((cat) => cat.id);
 check('rows can be switched off', minimalNames.join() === 'foryou,foryou', minimalNames.join(', '));
 check('switched-off rows return nothing', (await request('GET', `${minimal}/catalog/movie/short.json`)).status === 404);
+
+const moviesOnly = base({ authKey: 'AUTHKEY_MAIN', top: true, off: ['series'] });
+const moviesOnlyManifest = await getJson(`${moviesOnly}/manifest.json`);
+check('series can be switched off completely', !moviesOnlyManifest.catalogs.some((cat) => cat.type === 'series') && moviesOnlyManifest.types.join() === 'movie');
+check('series endpoint returns 404 when series switched off', (await request('GET', `${moviesOnly}/catalog/series/foryou.json`)).status === 404);
 
 check('unknown rows return nothing', (await request('GET', `${main}/catalog/movie/together.json`)).status === 404);
 
