@@ -126,9 +126,9 @@ console.log = ((log) => (...args) => {
 
 await import('../server.js');
 
-function request(method, path, body) {
+function request(method, path, body, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
-    const req = http.request({ host: '127.0.0.1', port: 7391, method, path, headers: { 'content-type': 'application/json' } }, (res) => {
+    const req = http.request({ host: '127.0.0.1', port: 7391, method, path, headers: { 'content-type': 'application/json', ...extraHeaders } }, (res) => {
       let data = '';
       res.on('data', (d) => (data += d));
       res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: data }));
@@ -338,8 +338,18 @@ const configuredPage = await request('GET', `${main}/configure`);
 check('configure page served under config path', configuredPage.status === 200);
 check('invalid config segment 404s', (await request('GET', '/not-a-config/manifest.json')).status === 404);
 
-const posterRes = await request('GET', `${movies[0].poster.replace('http://127.0.0.1:7391', '')}`);
+const posterPath = movies[0].poster.replace('http://127.0.0.1:7391', '');
+const posterRes = await request('GET', posterPath);
 check('poster endpoint serves badged jpeg', posterRes.status === 200 && posterRes.headers['content-type'] === 'image/jpeg');
+check('poster has content-length header', Boolean(posterRes.headers['content-length']));
+check('poster has immutable cache-control', posterRes.headers['cache-control']?.includes('immutable'));
+
+const etag = posterRes.headers['etag'];
+const cachedRes = await request('GET', posterPath, null, { 'if-none-match': etag });
+check('poster returns 304 on etag match', cachedRes.status === 304);
+
+const pingRes = await request('GET', '/ping');
+check('ping endpoint responds pong', pingRes.status === 200 && pingRes.body === 'pong');
 
 console.log(failures ? `\n${failures} FAILED` : '\nAll checks passed');
 process.exit(failures ? 1 : 0);
