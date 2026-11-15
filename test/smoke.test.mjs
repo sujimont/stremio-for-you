@@ -2,6 +2,7 @@
 // Run with: npm test
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
+import sharp from 'sharp';
 
 process.env.TMDB_API_KEY = 'fakekey123';
 process.env.PORT = '7391';
@@ -106,6 +107,15 @@ globalThis.fetch = async (input, init = {}) => {
     if (path.startsWith('/find/')) return json(tmdb[path] || { movie_results: [], tv_results: [] });
     return tmdb[path] ? json(tmdb[path]) : json({}, 404);
   }
+  if (url.host === 'image.tmdb.org') {
+    const dummyJpeg = await sharp({
+      create: { width: 342, height: 513, channels: 3, background: { r: 100, g: 100, b: 100 } },
+    }).jpeg().toBuffer();
+    return new Response(dummyJpeg, { status: 200, headers: { 'content-type': 'image/jpeg' } });
+  }
+  if (url.host === 'v3-cinemeta.strem.io') {
+    return json({ meta: { imdbRating: '8.5' } });
+  }
   throw new Error('Unexpected fetch ' + url);
 };
 
@@ -181,7 +191,7 @@ check('title recommended by two seeds ranks first', movieIds[0] === 'tt202');
 check('already-watched title excluded', !movieIds.includes('tt9'));
 check('library title excluded', !movieIds.includes('tt2'));
 check('unreleased title excluded', !movieIds.includes('tt206'));
-check('meta has poster', movies[0].poster?.includes('image.tmdb.org'));
+check('meta has poster', Boolean(movies[0].poster?.includes('/poster/') || movies[0].poster?.includes('image.tmdb.org')));
 check('description is only the plot', movies[0].description === 'x', JSON.stringify(movies[0].description));
 const because = movies[0].links.filter((l) => l.category === 'Because you watched');
 check('"Because you watched" chips, strongest first, linking to the seed',
@@ -327,6 +337,9 @@ check('desktop: Start with Stremio on / off / status', enabled.shortcuts[0].forY
 const configuredPage = await request('GET', `${main}/configure`);
 check('configure page served under config path', configuredPage.status === 200);
 check('invalid config segment 404s', (await request('GET', '/not-a-config/manifest.json')).status === 404);
+
+const posterRes = await request('GET', `${movies[0].poster.replace('http://127.0.0.1:7391', '')}`);
+check('poster endpoint serves badged jpeg', posterRes.status === 200 && posterRes.headers['content-type'] === 'image/jpeg');
 
 console.log(failures ? `\n${failures} FAILED` : '\nAll checks passed');
 process.exit(failures ? 1 : 0);

@@ -166,6 +166,16 @@
       </fieldset>
 
       <fieldset>
+        <legend>Poster Badges</legend>
+        <label class="row" style="margin-top: 4px;">
+          <input id="ratingBadges" type="checkbox" checked>
+          <span>Show IMDb Rating Badges on Posters
+            <small>Overlays official IMDb rating banner at the bottom of recommendation posters</small>
+          </span>
+        </label>
+      </fieldset>
+
+      <fieldset>
         <legend>Indian Cinema Languages</legend>
         <p class="hint">Filter Indian movies to only your preferred languages:</p>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
@@ -317,6 +327,7 @@
         off: [...document.querySelectorAll('[data-row]')].filter((box) => !box.checked).map((box) => box.dataset.row),
         indianLangs: indianLangs.length ? indianLangs : ['ml', 'ta', 'hi'],
         aiCount,
+        ratingBadges: $('ratingBadges').checked,
       };
 
       $('password').value = '';
