@@ -260,7 +260,7 @@ check('unknown rows return nothing', (await request('GET', `${main}/catalog/movi
 // --- "rows at the top" setting ----------------------------------------------------
 
 check('nothing reordered while the addon is not installed', setCalls.length === 0);
-addonCollection.push(addon(ADDON_ID));
+addonCollection.push(addon(ADDON_ID, { manifest }));
 const sendToBottom = () => addonCollection.push(...addonCollection.splice(addonCollection.findIndex((a) => a.manifest.id === ADDON_ID), 1));
 const isFirst = () => addonCollection[0].manifest.id === ADDON_ID;
 
